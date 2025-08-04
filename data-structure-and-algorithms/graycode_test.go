@@ -5,11 +5,7 @@ import (
 	"testing"
 )
 
-func TestMain(m *testing.M) {
-	m.Run()
-}
-
-func TestInput_0_Correct_GrayCode(t *testing.T) {
+func TestGreyCode_Input_0_Correct_GrayCode(t *testing.T) {
 	n := 0
 	expected := []int{0}
 	result := grayCode(n)
@@ -18,7 +14,7 @@ func TestInput_0_Correct_GrayCode(t *testing.T) {
 	}
 }
 
-func TestInput_1_Correct_GrayCode(t *testing.T) {
+func TestGreyCode_Input_1_Correct_GrayCode(t *testing.T) {
 	n := 1
 	expected := []int{0b00, 0b01}
 	result := grayCode(n)
@@ -27,7 +23,7 @@ func TestInput_1_Correct_GrayCode(t *testing.T) {
 	}
 }
 
-func TestInput_2_Correct_GrayCode(t *testing.T) {
+func TestGreyCode_Input_2_Correct_GrayCode(t *testing.T) {
 	n := 2
 	first := []int{0b00, 0b01, 0b11, 0b10}
 	second := []int{0b00, 0b10, 0b01, 0b11}
@@ -37,7 +33,7 @@ func TestInput_2_Correct_GrayCode(t *testing.T) {
 	}
 }
 
-func TestInput_10_Correct_GrayCode(t *testing.T) {
+func TestGreyCode_Input_10_Correct_GrayCode(t *testing.T) {
 	n := 10
 	result := grayCode(n)
 	value, dup := FindFirstDuplicate(grayCode(n))
