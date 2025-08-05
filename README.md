@@ -142,8 +142,19 @@ curl -X POST http://localhost:8080/api/upload \
 
 #### API Endpoints
 
+**Backend API Endpoints:**
+
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|
 | `POST` | `/api/register` | User registration | ❌ |
 | `POST` | `/api/login` | User login | ❌ |
 | `POST` | `/api/upload` | File upload | ✅ |
+
+**Web Form Pages:**
+
+| Method | Endpoint | Description | Notes |
+|--------|----------|-------------|-------|
+| `GET` | `/form/register` | User registration form | HTML form with JavaScript |
+| `GET` | `/form/login` | User login form | Stores JWT in localStorage |
+| `GET` | `/form/upload` | File upload form | Requires valid JWT token |
+
