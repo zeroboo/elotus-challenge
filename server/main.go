@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"os"
 
+	"elotuschallenge/database"
 	"elotuschallenge/handler"
 	"elotuschallenge/middleware"
 
@@ -11,6 +12,12 @@ import (
 )
 
 func main() {
+	// Initialize database
+	if err := database.InitDB(); err != nil {
+		log.Fatal().Err(err).Msg("Failed to initialize database")
+	}
+	defer database.CloseDB()
+
 	// Get port from environment or use default
 	port := os.Getenv("PORT")
 	if port == "" {
