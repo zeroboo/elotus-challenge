@@ -33,4 +33,4 @@ go.work.sum
 
 ./tmp
 ./db
-./*.db
+*.db
