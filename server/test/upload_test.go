@@ -7,11 +7,14 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"net/textproto"
 	"strings"
 	"testing"
 
+	"elotuschallenge/common"
 	"elotuschallenge/handler"
 	"elotuschallenge/middleware"
+	"elotuschallenge/test/share"
 	"elotuschallenge/transfer"
 )
 
@@ -19,27 +22,23 @@ func TestHandleUpload_ValidImageFile_Success(t *testing.T) {
 	// First register and login to get a token
 	token := loginTestUser(t, "uploaduser", "password123")
 
-	// Create a simple 1x1 PNG image in memory
-	pngData := []byte{
-		0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, // PNG signature
-		0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52, // IHDR chunk
-		0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, // 1x1 dimensions
-		0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53, // bit depth, color type, etc.
-		0xDE, 0x00, 0x00, 0x00, 0x0C, 0x49, 0x44, 0x41, // IDAT chunk
-		0x54, 0x08, 0xD7, 0x63, 0xF8, 0x00, 0x00, 0x00, // minimal image data
-		0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
-		0x37, 0x6E, 0xF9, 0x24, 0x00, 0x00, 0x00, 0x00, // IEND chunk
-		0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
+	// Load PNG data from file
+	pngData, err := share.LoadTestPNG("./test/files/leaf.png")
+	if err != nil {
+		t.Fatalf("Failed to load test PNG file: %v", err)
 	}
 
 	// Create multipart form
 	var body bytes.Buffer
 	writer := multipart.NewWriter(&body)
 
-	// Add file field
-	part, err := writer.CreateFormFile("data", "test.png")
+	// Add file field with explicit Content-Type header
+	partHeader := textproto.MIMEHeader{}
+	partHeader.Set("Content-Disposition", `form-data; name="data"; filename="leaf.png"`)
+	partHeader.Set(common.HeaderContentType, "image/png")
+	part, err := writer.CreatePart(partHeader)
 	if err != nil {
-		t.Fatalf("Failed to create form file: %v", err)
+		t.Fatalf("Failed to create form part: %v", err)
 	}
 
 	_, err = io.Copy(part, bytes.NewReader(pngData))
@@ -54,8 +53,8 @@ func TestHandleUpload_ValidImageFile_Success(t *testing.T) {
 
 	// Create request
 	req := httptest.NewRequest(http.MethodPost, "/upload", &body)
-	req.Header.Set("Content-Type", writer.FormDataContentType())
-	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set(common.HeaderContentType, writer.FormDataContentType())
+	req.Header.Set(common.HeaderAuthorization, "Bearer "+token)
 
 	w := httptest.NewRecorder()
 
@@ -91,7 +90,7 @@ func TestHandleUpload_NoAuthToken_Error(t *testing.T) {
 	writer.Close()
 
 	req := httptest.NewRequest(http.MethodPost, "/upload", &body)
-	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req.Header.Set(common.HeaderContentType, writer.FormDataContentType())
 	// No Authorization header
 
 	w := httptest.NewRecorder()
@@ -115,8 +114,8 @@ func TestHandleUpload_InvalidFileType_Error(t *testing.T) {
 	writer.Close()
 
 	req := httptest.NewRequest(http.MethodPost, "/upload", &body)
-	req.Header.Set("Content-Type", writer.FormDataContentType())
-	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set(common.HeaderContentType, writer.FormDataContentType())
+	req.Header.Set(common.HeaderAuthorization, "Bearer "+token)
 
 	w := httptest.NewRecorder()
 
@@ -130,8 +129,8 @@ func TestHandleUpload_InvalidFileType_Error(t *testing.T) {
 	var response transfer.APIResponse
 	json.NewDecoder(w.Body).Decode(&response)
 
-	if !strings.Contains(response.Message, "Invalid file type") {
-		t.Errorf("Expected invalid file type error, got '%s'", response.Message)
+	if response.Message != common.ErrMsgBadRequest {
+		t.Errorf("Expected '%v', got '%s'", common.ErrMsgBadRequest, response.Message)
 	}
 }
 
@@ -146,8 +145,8 @@ func TestHandleUpload_NoFileField_Error(t *testing.T) {
 	writer.Close()
 
 	req := httptest.NewRequest(http.MethodPost, "/upload", &body)
-	req.Header.Set("Content-Type", writer.FormDataContentType())
-	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set(common.HeaderContentType, writer.FormDataContentType())
+	req.Header.Set(common.HeaderAuthorization, "Bearer "+token)
 
 	w := httptest.NewRecorder()
 
@@ -161,7 +160,7 @@ func TestHandleUpload_NoFileField_Error(t *testing.T) {
 	var response transfer.APIResponse
 	json.NewDecoder(w.Body).Decode(&response)
 
-	if !strings.Contains(response.Message, "field 'data' is required") {
+	if response.Message != common.ErrMsgBadRequest {
 		t.Errorf("Expected missing field error, got '%s'", response.Message)
 	}
 }
@@ -179,7 +178,7 @@ func loginTestUser(t *testing.T, username, password string) string {
 
 	body, _ := json.Marshal(reqBody)
 	req := httptest.NewRequest(http.MethodPost, "/login", bytes.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set(common.HeaderContentType, common.HeaderValueContentTypeJSON)
 	w := httptest.NewRecorder()
 
 	handler.HandleLogin(w, req)

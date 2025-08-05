@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"elotuschallenge/common"
 	"net/http"
 	"path/filepath"
 )
@@ -8,7 +9,7 @@ import (
 // HandleStatic serves static files
 func HandleStatic(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		handleError(w, http.StatusMethodNotAllowed, common.ErrMsgMethodNotAllowed, nil)
 		return
 	}
 

@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"elotuschallenge/common"
 	"elotuschallenge/internal"
-	"elotuschallenge/share"
 	"elotuschallenge/transfer"
 	"elotuschallenge/utils"
 
@@ -25,7 +25,7 @@ var ErrInvalidToken = fmt.Errorf("invalid token")
 func AuthUser(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get Authorization header
-		authHeader := r.Header.Get(share.HeaderAuthorization)
+		authHeader := r.Header.Get(common.HeaderAuthorization)
 		if authHeader == "" {
 			ResponseUnauthorized(w, r, ErrNoAuthorizationHeader)
 			return
@@ -52,8 +52,8 @@ func AuthUser(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		// Add user info to request context
-		ctx := context.WithValue(r.Context(), share.ContextKeyUserID, claims.UserID)
-		ctx = context.WithValue(ctx, share.ContextKeyUsername, claims.Username)
+		ctx := context.WithValue(r.Context(), common.ContextKeyUserID, claims.UserID)
+		ctx = context.WithValue(ctx, common.ContextKeyUsername, claims.Username)
 		r = r.WithContext(ctx)
 
 		// Call next handler
@@ -63,7 +63,7 @@ func AuthUser(next http.HandlerFunc) http.HandlerFunc {
 
 // ResponseUnauthorized sends a uniform unauthorized response
 func ResponseUnauthorized(resp http.ResponseWriter, req *http.Request, authorizeError error) {
-	resp.Header().Set("Content-Type", "application/json")
+	resp.Header().Set(common.HeaderContentType, common.HeaderValueContentTypeJSON)
 	resp.WriteHeader(http.StatusUnauthorized)
 
 	response := transfer.NewErrorResponse(ErrMsgUnauthorized)

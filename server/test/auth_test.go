@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"elotuschallenge/common"
 	"elotuschallenge/internal"
 	"elotuschallenge/middleware"
 	"elotuschallenge/transfer"
@@ -57,7 +58,7 @@ func TestAuthMiddleware_ValidToken_Success(t *testing.T) {
 
 	// Create request with valid token
 	req := httptest.NewRequest(http.MethodGet, "/protected", nil)
-	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set(common.HeaderAuthorization, "Bearer "+token)
 	w := httptest.NewRecorder()
 
 	// Call middleware
@@ -96,8 +97,8 @@ func TestAuthMiddleware_NoAuthHeader_Error(t *testing.T) {
 		t.Error("Expected success to be false")
 	}
 
-	if response.Message != "Authorization header required" {
-		t.Errorf("Expected message 'Authorization header required', got '%s'", response.Message)
+	if response.Message != middleware.ErrMsgUnauthorized {
+		t.Errorf("Expected message '%v', got '%s'", middleware.ErrMsgUnauthorized, response.Message)
 	}
 }
 
@@ -121,7 +122,7 @@ func TestAuthMiddleware_InvalidAuthFormat_Error(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, "/protected", nil)
-			req.Header.Set("Authorization", tc.header)
+			req.Header.Set(common.HeaderAuthorization, tc.header)
 			w := httptest.NewRecorder()
 
 			authHandler(w, req)
@@ -137,8 +138,8 @@ func TestAuthMiddleware_InvalidAuthFormat_Error(t *testing.T) {
 				t.Error("Expected success to be false")
 			}
 
-			if response.Message != "Invalid authorization format" {
-				t.Errorf("Expected message 'Invalid authorization format', got '%s'", response.Message)
+			if response.Message != middleware.ErrMsgUnauthorized {
+				t.Errorf("Expected message '%v', got '%s'", middleware.ErrMsgUnauthorized, response.Message)
 			}
 		})
 	}
@@ -163,7 +164,7 @@ func TestAuthMiddleware_InvalidToken_Error(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, "/protected", nil)
-			req.Header.Set("Authorization", "Bearer "+tc.token)
+			req.Header.Set(common.HeaderAuthorization, "Bearer "+tc.token)
 			w := httptest.NewRecorder()
 
 			authHandler(w, req)
@@ -179,8 +180,8 @@ func TestAuthMiddleware_InvalidToken_Error(t *testing.T) {
 				t.Error("Expected success to be false")
 			}
 
-			if response.Message != "Invalid or expired token" {
-				t.Errorf("Expected message 'Invalid or expired token', got '%s'", response.Message)
+			if response.Message != middleware.ErrMsgUnauthorized {
+				t.Errorf("Expected message '%v', got '%s'", middleware.ErrMsgUnauthorized, response.Message)
 			}
 		})
 	}

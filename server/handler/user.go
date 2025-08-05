@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"elotuschallenge/common"
 	"elotuschallenge/internal"
 	"elotuschallenge/transfer"
 	"elotuschallenge/utils"
@@ -15,7 +16,7 @@ import (
 
 // handleError logs error details and response a uniform error response to client
 func handleError(w http.ResponseWriter, statusCode int, userMessage string, actualError error) {
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(common.HeaderContentType, common.HeaderValueContentTypeJSON)
 	w.WriteHeader(statusCode)
 
 	// Log the actual error for debugging
@@ -27,7 +28,11 @@ func handleError(w http.ResponseWriter, statusCode int, userMessage string, actu
 			Int("status_code", statusCode).
 			Str("ref_code", refCode).Msg("Request failed")
 	} else {
-		log.Warn().Str("user_message", userMessage).Int("status_code", statusCode).Str("ref_code", refCode).Msg("Request rejected")
+		log.Error().
+			Str("user_message", userMessage).
+			Int("status_code", statusCode).
+			Str("ref_code", refCode).
+			Msg("Request rejected")
 	}
 
 	response := transfer.NewErrorResponse(userMessage)
@@ -38,43 +43,43 @@ func handleError(w http.ResponseWriter, statusCode int, userMessage string, actu
 // Register handler
 func HandleRegister(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		handleError(w, http.StatusMethodNotAllowed, "Method not allowed", nil)
+		handleError(w, http.StatusMethodNotAllowed, common.ErrMsgMethodNotAllowed, nil)
 		return
 	}
 
 	// Parse request body
 	var req transfer.RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		handleError(w, http.StatusBadRequest, "Invalid JSON format", err)
+		handleError(w, http.StatusBadRequest, common.ErrMsgBadRequest, fmt.Errorf("%w: %w", common.ErrInvalidJSON, err))
 		return
 	}
 
 	// Validate input
 	if err := validateRegisterRequest(&req); err != nil {
-		handleError(w, http.StatusBadRequest, "Validation failed", err)
+		handleError(w, http.StatusBadRequest, common.ErrMsgBadRequest, fmt.Errorf("%w: %w", common.ErrInvalidRequest, err))
 		return
 	}
 
 	// Check if user already exists
 	exists, err := internal.UserService.UserExists(req.Username)
 	if err != nil {
-		handleError(w, http.StatusInternalServerError, "Failed to check user existence", err)
+		handleError(w, http.StatusInternalServerError, common.ErrMsgInternalServerError, err)
 		return
 	}
 	if exists {
-		handleError(w, http.StatusConflict, "Username already exists", nil)
+		handleError(w, http.StatusConflict, common.ErrMsgUserExists, nil)
 		return
 	}
 
 	// Register user (service handles password hashing)
 	createdUser, err := internal.UserService.RegisterUser(req.Username, req.Password)
 	if err != nil {
-		handleError(w, http.StatusInternalServerError, "Failed to create user", err)
+		handleError(w, http.StatusInternalServerError, common.ErrMsgInternalServerError, fmt.Errorf("%w: %v", common.ErrUserCreationFailed, err))
 		return
 	}
 
 	// Respond with success
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(common.HeaderContentType, common.HeaderValueContentTypeJSON)
 	w.WriteHeader(http.StatusCreated)
 
 	data := transfer.RegisterData{
@@ -91,27 +96,27 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 // Login handler
 func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		handleError(w, http.StatusMethodNotAllowed, "Method not allowed", nil)
+		handleError(w, http.StatusMethodNotAllowed, common.ErrMsgMethodNotAllowed, nil)
 		return
 	}
 
 	// Parse request body
 	var req transfer.LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		handleError(w, http.StatusBadRequest, "Invalid JSON format", err)
+		handleError(w, http.StatusBadRequest, common.ErrMsgBadRequest, fmt.Errorf("%w: %w", common.ErrInvalidJSON, err))
 		return
 	}
 
 	// Validate input
 	if err := ValidateLoginRequest(req.Username, req.Password); err != nil {
-		handleError(w, http.StatusBadRequest, "Validation failed", err)
+		handleError(w, http.StatusBadRequest, common.ErrMsgBadRequest, fmt.Errorf("%w: %w", common.ErrInvalidRequest, err))
 		return
 	}
 
 	// Authenticate user
 	user, err := internal.UserService.LoginUser(req.Username, req.Password)
 	if err != nil {
-		handleError(w, http.StatusUnauthorized, "Invalid credentials", err)
+		handleError(w, http.StatusUnauthorized, common.ErrMsgInvalidCredentials, fmt.Errorf("%w: %v", common.ErrInvalidCredentials, err))
 		return
 	}
 
@@ -123,7 +128,7 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Respond with success
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(common.HeaderContentType, common.HeaderValueContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 
 	data := transfer.LoginData{

@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"elotuschallenge/common"
 	"elotuschallenge/handler"
 	"elotuschallenge/transfer"
 )
@@ -161,8 +162,8 @@ func TestHandleLogin_InvalidMethod_Error(t *testing.T) {
 		t.Error("Expected success to be false")
 	}
 
-	if response.Message != "Method not allowed" {
-		t.Errorf("Expected message 'Method not allowed', got '%s'", response.Message)
+	if response.Message != common.ErrMsgMethodNotAllowed {
+		t.Errorf("Expected message '%v', got '%s'", common.ErrMsgMethodNotAllowed, response.Message)
 	}
 }
 
@@ -184,8 +185,8 @@ func TestHandleLogin_InvalidJSON_Error(t *testing.T) {
 		t.Error("Expected success to be false")
 	}
 
-	if response.Message != "Invalid JSON format" {
-		t.Errorf("Expected message 'Invalid JSON format', got '%s'", response.Message)
+	if response.Message != common.ErrMsgBadRequest {
+		t.Errorf("Expected message '%v', got '%s'", common.ErrMsgBadRequest, response.Message)
 	}
 }
 
@@ -200,19 +201,19 @@ func TestHandleLogin_ValidationErrors_Error(t *testing.T) {
 			name:     "Empty username",
 			username: "",
 			password: "password123",
-			expected: "Validation failed",
+			expected: common.ErrMsgBadRequest,
 		},
 		{
 			name:     "Empty password",
 			username: "testuser",
 			password: "",
-			expected: "Validation failed",
+			expected: common.ErrMsgBadRequest,
 		},
 		{
 			name:     "Both empty",
 			username: "",
 			password: "",
-			expected: "Validation failed",
+			expected: common.ErrMsgBadRequest,
 		},
 	}
 

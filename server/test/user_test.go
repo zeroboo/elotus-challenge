@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"elotuschallenge/common"
 	"elotuschallenge/handler"
 	"elotuschallenge/transfer"
 )
@@ -20,7 +21,7 @@ func TestHandleRegister_ValidRequest_Success(t *testing.T) {
 
 	body, _ := json.Marshal(reqBody)
 	req := httptest.NewRequest(http.MethodPost, "/register", bytes.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set(common.HeaderContentType, common.HeaderValueContentTypeJSON)
 
 	// Create response recorder
 	w := httptest.NewRecorder()
@@ -66,14 +67,14 @@ func TestHandleRegister_InvalidMethod_ResponseError(t *testing.T) {
 		t.Error("Expected success to be false")
 	}
 
-	if response.Message != "Method not allowed" {
-		t.Errorf("Expected message 'Method not allowed', got '%s'", response.Message)
+	if response.Message != common.ErrMsgMethodNotAllowed {
+		t.Errorf("Expected message '%v', got '%s'", common.ErrMsgMethodNotAllowed, response.Message)
 	}
 }
 
 func TestHandleRegister_InvalidJSON_ResponseError(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/register", bytes.NewReader([]byte("invalid json")))
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set(common.HeaderContentType, common.HeaderValueContentTypeJSON)
 	w := httptest.NewRecorder()
 
 	handler.HandleRegister(w, req)
@@ -89,8 +90,8 @@ func TestHandleRegister_InvalidJSON_ResponseError(t *testing.T) {
 		t.Error("Expected success to be false")
 	}
 
-	if response.Message != "Invalid JSON format" {
-		t.Errorf("Expected message 'Invalid JSON format', got '%s'", response.Message)
+	if response.Message != common.ErrMsgBadRequest {
+		t.Errorf("Expected message '%v', got '%s'", common.ErrMsgBadRequest, response.Message)
 	}
 }
 
@@ -105,31 +106,31 @@ func TestHandleRegister_InvalidRequest_ResponseError(t *testing.T) {
 			name:     "Empty username",
 			username: "",
 			password: "password123",
-			expected: "Validation failed",
+			expected: common.ErrMsgBadRequest,
 		},
 		{
 			name:     "Short username",
 			username: "ab",
 			password: "password123",
-			expected: "Validation failed",
+			expected: common.ErrMsgBadRequest,
 		},
 		{
 			name:     "Long username",
 			username: "this_is_a_very_long_username_that_exceeds_fifty_characters_limit",
 			password: "password123",
-			expected: "Validation failed",
+			expected: common.ErrMsgBadRequest,
 		},
 		{
 			name:     "Empty password",
 			username: "testuser",
 			password: "",
-			expected: "Validation failed",
+			expected: common.ErrMsgBadRequest,
 		},
 		{
 			name:     "Short password",
 			username: "testuser",
 			password: "12345",
-			expected: "Validation failed",
+			expected: common.ErrMsgBadRequest,
 		},
 	}
 
@@ -142,7 +143,7 @@ func TestHandleRegister_InvalidRequest_ResponseError(t *testing.T) {
 
 			body, _ := json.Marshal(reqBody)
 			req := httptest.NewRequest(http.MethodPost, "/register", bytes.NewReader(body))
-			req.Header.Set("Content-Type", "application/json")
+			req.Header.Set(common.HeaderContentType, common.HeaderValueContentTypeJSON)
 			w := httptest.NewRecorder()
 
 			handler.HandleRegister(w, req)
@@ -174,7 +175,7 @@ func TestHandleRegister_UserAlreadyExists_ResponseError(t *testing.T) {
 
 	body, _ := json.Marshal(reqBody)
 	req := httptest.NewRequest(http.MethodPost, "/register", bytes.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set(common.HeaderContentType, common.HeaderValueContentTypeJSON)
 	w := httptest.NewRecorder()
 
 	// Register first user
@@ -183,7 +184,7 @@ func TestHandleRegister_UserAlreadyExists_ResponseError(t *testing.T) {
 	// Try to register the same user again
 	body, _ = json.Marshal(reqBody)
 	req = httptest.NewRequest(http.MethodPost, "/register", bytes.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
+	w.Header().Set(common.HeaderContentType, common.HeaderValueContentTypeJSON)
 	w = httptest.NewRecorder()
 
 	handler.HandleRegister(w, req)
@@ -212,15 +213,15 @@ func TestHandleRegister_InvalidContentType_ResponseError(t *testing.T) {
 
 	body, _ := json.Marshal(reqBody)
 	req := httptest.NewRequest(http.MethodPost, "/register", bytes.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set(common.HeaderContentType, common.HeaderValueContentTypeJSON)
 	w := httptest.NewRecorder()
 
 	handler.HandleRegister(w, req)
 
 	// Check response content type
-	contentType := w.Header().Get("Content-Type")
-	if contentType != "application/json" {
-		t.Errorf("Expected Content-Type 'application/json', got '%s'", contentType)
+	contentType := w.Header().Get(common.HeaderContentType)
+	if contentType != common.HeaderValueContentTypeJSON {
+		t.Errorf("Expected Content-Type '%v', got '%s'", common.HeaderValueContentTypeJSON, contentType)
 	}
 }
 
@@ -232,7 +233,8 @@ func TestHandleRegister_ResponseStructure_Correct(t *testing.T) {
 
 	body, _ := json.Marshal(reqBody)
 	req := httptest.NewRequest(http.MethodPost, "/register", bytes.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set(common.HeaderContentType, common.HeaderValueContentTypeJSON)
+
 	w := httptest.NewRecorder()
 
 	handler.HandleRegister(w, req)
