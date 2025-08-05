@@ -47,10 +47,6 @@ func TestHandleLogin_ValidCredentials_Success(t *testing.T) {
 		t.Error("Expected success to be true")
 	}
 
-	if response.Message != "Login successful" {
-		t.Errorf("Expected message 'Login successful', got '%s'", response.Message)
-	}
-
 	if response.Data == nil {
 		t.Fatal("Expected data to be present")
 	}

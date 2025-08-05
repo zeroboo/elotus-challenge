@@ -5,6 +5,8 @@ type APIResponse struct {
 	Success bool        `json:"success"`
 	Message string      `json:"message"`
 	Data    interface{} `json:"data,omitempty"`
+	// Optional reference code for tracking
+	RefCode string `json:"refCode,omitempty"`
 }
 
 // NewSuccessResponse creates a successful response

@@ -8,6 +8,7 @@ import (
 
 	"elotuschallenge/internal"
 	"elotuschallenge/transfer"
+	"elotuschallenge/utils"
 
 	"github.com/rs/zerolog/log"
 )
@@ -18,13 +19,19 @@ func handleError(w http.ResponseWriter, statusCode int, userMessage string, actu
 	w.WriteHeader(statusCode)
 
 	// Log the actual error for debugging
+	refCode := utils.GenerateRandomString(8) // Generate 8-character random hex string
 	if actualError != nil {
-		log.Error().Err(actualError).Str("user_message", userMessage).Int("status_code", statusCode).Msg("Request failed")
+		log.Error().
+			Err(actualError).
+			Str("user_message", userMessage).
+			Int("status_code", statusCode).
+			Str("ref_code", refCode).Msg("Request failed")
 	} else {
-		log.Warn().Str("user_message", userMessage).Int("status_code", statusCode).Msg("Request rejected")
+		log.Warn().Str("user_message", userMessage).Int("status_code", statusCode).Str("ref_code", refCode).Msg("Request rejected")
 	}
 
 	response := transfer.NewErrorResponse(userMessage)
+	response.RefCode = refCode
 	json.NewEncoder(w).Encode(response)
 }
 
@@ -129,7 +136,7 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	response := transfer.NewSuccessResponse("Login successful", data)
+	response := transfer.NewSuccessResponse("", data)
 	json.NewEncoder(w).Encode(response)
 }
 
