@@ -49,6 +49,31 @@ func createTables() error {
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 	);`
 
+	// Files table
+	fileTable := `
+	CREATE TABLE IF NOT EXISTS files (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		filename VARCHAR(255) NOT NULL,
+		original_name VARCHAR(255) NOT NULL,
+		content_type VARCHAR(100) NOT NULL,
+		size INTEGER NOT NULL,
+		user_id INTEGER NOT NULL,
+		upload_path VARCHAR(500) NOT NULL,
+		user_agent VARCHAR(500),
+		ip_address VARCHAR(45),
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY (user_id) REFERENCES users(id)
+	);`
+
+	// Optional: Token blacklist for revocation
+	tokenTable := `
+	CREATE TABLE IF NOT EXISTS revoked_tokens (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		token_hash VARCHAR(255) UNIQUE NOT NULL,
+		revoked_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		expires_at DATETIME NOT NULL
+	);`
+
 	// Execute table creation
 	tables := []string{userTable, fileTable, tokenTable}
 	for _, table := range tables {

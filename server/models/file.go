@@ -17,9 +17,3 @@ type FileMetadata struct {
 	IPAddress    string    `json:"ip_address"`
 	CreatedAt    time.Time `json:"created_at"`
 }
-
-// UploadResponse represents the file upload response
-type UploadResponse struct {
-	Message  string       `json:"message"`
-	FileInfo FileMetadata `json:"file_info"`
-}
