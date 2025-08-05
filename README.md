@@ -40,7 +40,7 @@ elotus-challenge/
     ├── middleware/                   # HTTP middleware
     ├── handler/                      # HTTP handlers
     ├── static/                       # Web interface
-    └── test/                         # Tests 
+    └── test/                         # Unit tests & Integration tests
 ```
 ### Features
 ---
@@ -96,6 +96,14 @@ The application supports the following environment variables for configuration:
 | `TEMP_DIR` | Directory for uploaded files | `./tmp` | `TEMP_DIR=/uploads` |
 | `TOKEN_EXPIRATION_SECONDS` | JWT token expiration time in seconds | `86400` (24 hours) | `TOKEN_EXPIRATION_SECONDS=3600` |
 
+#### Run Unit & Intergration test
+```bash
+# Navigate to server directory
+cd server
+
+# Run tests
+go test ./test
+```
 **Example with environment variables:**
 
 ```bash
@@ -138,7 +146,7 @@ curl -X POST http://localhost:8080/api/upload \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -F "data=@/path/to/your/image.jpg"
 ```
-
+#### 2. Using curl
 
 #### API Endpoints
 
