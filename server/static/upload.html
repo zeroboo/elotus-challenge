@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>File Upload Test</title>
+</head>
+<body>
+    <h2>File Upload Test</h2>
+    <form action="/upload" method="post" enctype="multipart/form-data">
+        <div>
+            <label for="data">Select image file:</label>
+            <input type="file" id="data" name="data" accept="image/*" required>
+        </div>
+        <div style="margin-top: 10px;">
+            <label for="token">JWT Token:</label>
+            <input type="text" id="token" name="token" placeholder="Enter your JWT token" style="width: 400px;" required>
+        </div>
+        <div style="margin-top: 10px;">
+            <button type="submit">Upload File</button>
+        </div>
+    </form>
+
+    <script>
+        // Add token to Authorization header before submitting
+        document.querySelector('form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            const fileInput = document.getElementById('data');
+            const tokenInput = document.getElementById('token');
+            
+            if (fileInput.files.length === 0) {
+                alert('Please select a file');
+                return;
+            }
+            
+            if (!tokenInput.value.trim()) {
+                alert('Please enter a JWT token');
+                return;
+            }
+            
+            formData.append('data', fileInput.files[0]);
+            
+            fetch('/upload', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + tokenInput.value.trim()
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('File uploaded successfully!\n\nFile ID: ' + data.data.file_info.id + '\nFilename: ' + data.data.file_info.filename);
+                } else {
+                    alert('Upload failed: ' + data.message + (data.ref_code ? ' (Ref: ' + data.ref_code + ')' : ''));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Upload failed: ' + error.message);
+            });
+        });
+    </script>
+</body>
+</html>

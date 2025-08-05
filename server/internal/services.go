@@ -10,12 +10,14 @@ import (
 var (
 	UserService  services.IUserService
 	TokenManager services.ITokenManager
+	FileService  services.IFileService
 )
 
 // InitServices initializes all services with their dependencies
 func InitServices() {
 	// Initialize repositories
 	userRepo := repository.NewSQLiteUserRepository()
+	fileRepo := repository.NewSQLiteFileRepository()
 
 	// Get JWT secret from environment or use default for development
 	jwtSecret := os.Getenv("JWT_SECRET")
@@ -26,4 +28,5 @@ func InitServices() {
 	// Initialize services with repositories
 	UserService = services.NewUserService(userRepo)
 	TokenManager = services.NewTokenManager(jwtSecret, 86400) // 24 hours
+	FileService = services.NewFileService(fileRepo, "./tmp")
 }

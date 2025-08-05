@@ -48,6 +48,9 @@ func setupRoutes() {
 	// Protected section
 	http.HandleFunc("/upload", middleware.AuthUser(handler.HandleUpload))
 
+	// Static files for testing
+	http.HandleFunc("/upload-form", handler.HandleStatic)
+
 	// Health check
 	http.HandleFunc("/health", handler.HandleHealth)
 

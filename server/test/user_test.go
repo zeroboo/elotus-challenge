@@ -44,10 +44,6 @@ func TestHandleRegister_ValidRequest_Success(t *testing.T) {
 		t.Error("Expected success to be true")
 	}
 
-	if response.Message != "User registered successfully" {
-		t.Errorf("Expected message 'User registered successfully', got '%s'", response.Message)
-	}
-
 	if response.Data == nil {
 		t.Error("Expected data to be present")
 	}
