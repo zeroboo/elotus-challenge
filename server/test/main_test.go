@@ -4,6 +4,8 @@ package test
 import (
 	"os"
 	"testing"
+
+	"elotuschallenge/database"
 )
 
 func TestMain(m *testing.M) {
@@ -20,7 +22,16 @@ func TestMain(m *testing.M) {
 }
 
 func setup() {
+	// Setup: Use a test database
+	os.Setenv("DB_PATH", ":memory:")
+
+	// Initialize test database
+	if err := database.InitDB(); err != nil {
+		panic("Failed to initialize test database: " + err.Error())
+	}
 }
 
 func cleanup() {
+	// Cleanup
+	database.CloseDB()
 }
