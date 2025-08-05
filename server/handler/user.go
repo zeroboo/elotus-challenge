@@ -7,60 +7,62 @@ import (
 	"strings"
 
 	"elotuschallenge/internal"
-	"elotuschallenge/models"
 	"elotuschallenge/transfer"
 
-	"golang.org/x/crypto/bcrypt"
+	"github.com/rs/zerolog/log"
 )
+
+// handleError logs error details and response a uniform error response to client
+func handleError(w http.ResponseWriter, statusCode int, userMessage string, actualError error) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+
+	// Log the actual error for debugging
+	if actualError != nil {
+		log.Error().Err(actualError).Str("user_message", userMessage).Int("status_code", statusCode).Msg("Request failed")
+	} else {
+		log.Warn().Str("user_message", userMessage).Int("status_code", statusCode).Msg("Request rejected")
+	}
+
+	response := transfer.NewErrorResponse(userMessage)
+	json.NewEncoder(w).Encode(response)
+}
 
 // Register handler
 func HandleRegister(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		handleError(w, http.StatusMethodNotAllowed, "Method not allowed", nil)
 		return
 	}
 
 	// Parse request body
 	var req transfer.RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid JSON format", http.StatusBadRequest)
+		handleError(w, http.StatusBadRequest, "Invalid JSON format", err)
 		return
 	}
 
 	// Validate input
 	if err := validateRegisterRequest(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		handleError(w, http.StatusBadRequest, "Validation failed", err)
 		return
 	}
 
 	// Check if user already exists
 	exists, err := internal.UserService.UserExists(req.Username)
 	if err != nil {
-		http.Error(w, "Failed to check user existence", http.StatusInternalServerError)
+		handleError(w, http.StatusInternalServerError, "Failed to check user existence", err)
 		return
 	}
 	if exists {
-		http.Error(w, "Username already exists", http.StatusConflict)
+		handleError(w, http.StatusConflict, "Username already exists", nil)
 		return
 	}
 
-	// Hash password
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	// Register user (service handles password hashing)
+	createdUser, err := internal.UserService.RegisterUser(req.Username, req.Password)
 	if err != nil {
-		http.Error(w, "Failed to process password", http.StatusInternalServerError)
-		return
-	}
-
-	// Create user
-	user := models.User{
-		Username:     req.Username,
-		PasswordHash: string(hashedPassword),
-	}
-
-	// Save to database using service
-	createdUser, err := internal.UserService.CreateUser(&user)
-	if err != nil {
-		http.Error(w, "Failed to create user", http.StatusInternalServerError)
+		handleError(w, http.StatusInternalServerError, "Failed to create user", err)
 		return
 	}
 
@@ -68,28 +70,30 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 
-	response := map[string]interface{}{
-		"message": "User registered successfully",
-		"user": map[string]interface{}{
-			"id":       createdUser.ID,
-			"username": createdUser.Username,
+	data := transfer.RegisterData{
+		User: transfer.UserInfo{
+			ID:       createdUser.ID,
+			Username: createdUser.Username,
 		},
 	}
 
+	response := transfer.NewSuccessResponse("User registered successfully", data)
 	json.NewEncoder(w).Encode(response)
 }
 
 // Login handler
 func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		handleError(w, http.StatusMethodNotAllowed, "Method not allowed", nil)
 		return
 	}
 
 	// TODO: Implement login logic
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprint(w, `{"message":"Login endpoint - TODO"}`)
+
+	response := transfer.NewSuccessResponse("Login endpoint - TODO", nil)
+	json.NewEncoder(w).Encode(response)
 }
 
 // validateRegisterRequest validates the registration request
