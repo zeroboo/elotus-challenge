@@ -2,6 +2,7 @@ package internal
 
 import (
 	"os"
+	"strconv"
 
 	"elotuschallenge/repository"
 	"elotuschallenge/services"
@@ -22,11 +23,25 @@ func InitServices() {
 	// Get JWT secret from environment or use default for development
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
-		jwtSecret = "elotus-challenge-secret-key-change-in-production"
+		jwtSecret = "elotus-challenge-default"
+	}
+
+	// Get temp directory from environment or use default
+	tempDir := os.Getenv("TEMP_DIR")
+	if tempDir == "" {
+		tempDir = "./tmp"
+	}
+
+	// Get token expiration from environment or use default (24 hours)
+	tokenExpirationSeconds := int64(86400) // Default: 24 hours
+	if tokenExpEnv := os.Getenv("TOKEN_EXPIRATION_SECONDS"); tokenExpEnv != "" {
+		if expSeconds, err := strconv.ParseInt(tokenExpEnv, 10, 64); err == nil && expSeconds > 0 {
+			tokenExpirationSeconds = expSeconds
+		}
 	}
 
 	// Initialize services with repositories
 	UserService = services.NewUserService(userRepo)
-	TokenManager = services.NewTokenManager(jwtSecret, 86400) // 24 hours
-	FileService = services.NewFileService(fileRepo, "./tmp")
+	TokenManager = services.NewTokenManager(jwtSecret, tokenExpirationSeconds)
+	FileService = services.NewFileService(fileRepo, tempDir)
 }
