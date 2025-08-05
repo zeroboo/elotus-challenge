@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"elotuschallenge/database"
+	"elotuschallenge/internal"
 )
 
 func TestMain(m *testing.M) {
@@ -29,6 +30,7 @@ func setup() {
 	if err := database.InitDB(); err != nil {
 		panic("Failed to initialize test database: " + err.Error())
 	}
+	internal.InitServices()
 }
 
 func cleanup() {

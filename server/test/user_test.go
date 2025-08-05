@@ -8,14 +8,8 @@ import (
 	"testing"
 
 	"elotuschallenge/handler"
-	"elotuschallenge/internal"
 	"elotuschallenge/transfer"
 )
-
-func init() {
-	// Initialize services for testing
-	internal.InitServices()
-}
 
 func TestHandleRegister_ValidRequest_Success(t *testing.T) {
 	// Create request body

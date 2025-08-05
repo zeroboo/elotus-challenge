@@ -88,12 +88,60 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Implement login logic
+	// Parse request body
+	var req transfer.LoginRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		handleError(w, http.StatusBadRequest, "Invalid JSON format", err)
+		return
+	}
+
+	// Validate input
+	if err := ValidateLoginRequest(req.Username, req.Password); err != nil {
+		handleError(w, http.StatusBadRequest, "Validation failed", err)
+		return
+	}
+
+	// Authenticate user
+	user, err := internal.UserService.LoginUser(req.Username, req.Password)
+	if err != nil {
+		handleError(w, http.StatusUnauthorized, "Invalid credentials", err)
+		return
+	}
+
+	// Generate JWT token using standalone JWT service
+	token, err := internal.TokenManager.GenerateToken(user.ID, user.Username)
+	if err != nil {
+		handleError(w, http.StatusInternalServerError, "Failed to generate token", err)
+		return
+	}
+
+	// Respond with success
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
-	response := transfer.NewSuccessResponse("Login endpoint - TODO", nil)
+	data := transfer.LoginData{
+		Auth: transfer.LoginResponse{
+			Token: token,
+			User: transfer.UserInfo{
+				ID:       user.ID,
+				Username: user.Username,
+			},
+		},
+	}
+
+	response := transfer.NewSuccessResponse("Login successful", data)
 	json.NewEncoder(w).Encode(response)
+}
+
+// ValidateLoginRequest validates the login request
+func ValidateLoginRequest(username, password string) error {
+	if strings.TrimSpace(username) == "" {
+		return fmt.Errorf("username is required")
+	}
+	if strings.TrimSpace(password) == "" {
+		return fmt.Errorf("password is required")
+	}
+	return nil
 }
 
 // validateRegisterRequest validates the registration request

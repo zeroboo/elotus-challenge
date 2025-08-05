@@ -3,6 +3,7 @@ package services
 import (
 	"elotuschallenge/models"
 	"elotuschallenge/repository"
+	"fmt"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -15,6 +16,26 @@ func NewUserService(userRepo repository.IUser) IUserService {
 	return &UserService{
 		userRepo: userRepo,
 	}
+}
+
+// LoginUser authenticates a user with username and password
+func (s *UserService) LoginUser(username, password string) (*models.User, error) {
+	// Get user by username
+	user, err := s.userRepo.GetUserByUsername(username)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, fmt.Errorf("user not found")
+	}
+
+	// Compare password
+	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
+	if err != nil {
+		return nil, fmt.Errorf("invalid credentials")
+	}
+
+	return user, nil
 }
 
 // RegisterUser handles user registration with password hashing
