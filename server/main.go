@@ -6,6 +6,7 @@ import (
 
 	"elotuschallenge/database"
 	"elotuschallenge/handler"
+	"elotuschallenge/internal"
 	"elotuschallenge/middleware"
 
 	"github.com/rs/zerolog/log"
@@ -17,6 +18,9 @@ func main() {
 		log.Fatal().Err(err).Msg("Failed to initialize database")
 	}
 	defer database.CloseDB()
+
+	// Initialize services
+	internal.InitServices()
 
 	// Get port from environment or use default
 	port := os.Getenv("PORT")

@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	"os"
 
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/rs/zerolog/log"
+	_ "modernc.org/sqlite"
 )
 
 var DB *sql.DB
@@ -19,7 +19,7 @@ func InitDB() error {
 	}
 
 	var err error
-	DB, err = sql.Open("sqlite3", dbPath)
+	DB, err = sql.Open("sqlite", dbPath)
 	if err != nil {
 		return err
 	}
