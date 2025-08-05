@@ -2,10 +2,33 @@
 <html>
 <head>
     <title>File Upload Test</title>
+    <style>
+        .nav-links {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        .nav-links a {
+            color: #007bff;
+            text-decoration: none;
+            margin: 0 15px;
+        }
+        .nav-links a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
+    <div class="nav-links">
+        <a href="/form/register">Register</a>
+        <a href="/form/login">Login</a>
+        <a href="/form/upload">Upload File</a>
+    </div>
+    
     <h2>File Upload Test</h2>
-    <form action="/upload" method="post" enctype="multipart/form-data">
+    <form action="/api/upload" method="post" enctype="multipart/form-data">
         <div>
             <label for="data">Select image file:</label>
             <input type="file" id="data" name="data" accept="image/*" required>
@@ -20,6 +43,15 @@
     </form>
 
     <script>
+        // Load token from localStorage if available
+        window.addEventListener('load', function() {
+            const tokenInput = document.getElementById('token');
+            const savedToken = localStorage.getItem('jwt_token');
+            if (savedToken) {
+                tokenInput.value = savedToken;
+            }
+        });
+        
         // Add token to Authorization header before submitting
         document.querySelector('form').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -40,14 +72,26 @@
             
             formData.append('data', fileInput.files[0]);
             
-            fetch('/upload', {
+            fetch('/api/upload', {
                 method: 'POST',
                 headers: {
                     'Authorization': 'Bearer ' + tokenInput.value.trim()
                 },
                 body: formData
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        try {
+                            const errorData = JSON.parse(text);
+                            throw new Error(errorData.message || 'Upload failed');
+                        } catch (parseError) {
+                            throw new Error(`HTTP ${response.status}: ${text || 'Upload failed'}`);
+                        }
+                    });
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
                     alert('File uploaded successfully!\n\nFile ID: ' + data.data.file_info.id + '\nFilename: ' + data.data.file_info.filename);

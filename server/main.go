@@ -41,15 +41,15 @@ func main() {
 
 // setupRoutes initializes the HTTP routes for the server using net/http
 func setupRoutes() {
-	// Authentication routes
-	http.HandleFunc("/register", handler.HandleRegister)
-	http.HandleFunc("/login", handler.HandleLogin)
+	// API routes
+	http.HandleFunc("/api/register", handler.HandleRegister)
+	http.HandleFunc("/api/login", handler.HandleLogin)
+	http.HandleFunc("/api/upload", middleware.AuthUser(handler.HandleUpload))
 
-	// Protected section
-	http.HandleFunc("/upload", middleware.AuthUser(handler.HandleUpload))
-
-	// Static files for testing
-	http.HandleFunc("/upload-form", handler.HandleStatic)
+	// Form routes (static files)
+	http.HandleFunc("/form/register", handler.HandleStatic)
+	http.HandleFunc("/form/login", handler.HandleStatic)
+	http.HandleFunc("/form/upload", handler.HandleStatic)
 
 	// Health check
 	http.HandleFunc("/health", handler.HandleHealth)

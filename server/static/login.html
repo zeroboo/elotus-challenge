@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Login - Elotus Challenge</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .message {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .links {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .links a {
+            color: #007bff;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+        .links a:hover {
+            text-decoration: underline;
+        }
+        .token-display {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+        }
+        .token-display h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .token-text {
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 12px;
+            background-color: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .copy-btn {
+            background-color: #17a2b8;
+            font-size: 14px;
+            padding: 8px 15px;
+            width: auto;
+            margin-top: 10px;
+        }
+        .copy-btn:hover {
+            background-color: #138496;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>User Login</h1>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            
+            <button type="submit" id="submitBtn">Login</button>
+        </form>
+        
+        <div id="message" class="message" style="display: none;"></div>
+        
+        <div id="tokenDisplay" class="token-display" style="display: none;">
+            <h3>Login Successful!</h3>
+            <p>Your JWT Token:</p>
+            <div id="tokenText" class="token-text"></div>
+            <button id="copyBtn" class="copy-btn">Copy Token</button>
+            <p style="margin-top: 15px; font-size: 14px; color: #666;">
+                Use this token in the Authorization header as: <code>Bearer &lt;token&gt;</code>
+            </p>
+        </div>
+        
+        <div class="links">
+            <a href="/form/register">Don't have an account? Register</a>
+            <a href="/form/upload">File Upload</a>
+        </div>
+    </div>
+
+    <script>
+        let currentToken = '';
+        
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const messageDiv = document.getElementById('message');
+            const tokenDisplay = document.getElementById('tokenDisplay');
+            
+            // Get form data
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            
+            // Basic validation
+            if (!username) {
+                showMessage('Username is required', 'error');
+                return;
+            }
+            
+            if (!password) {
+                showMessage('Password is required', 'error');
+                return;
+            }
+            
+            // Hide previous token display
+            tokenDisplay.style.display = 'none';
+            
+            // Disable button during submission
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Logging in...';
+            
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    currentToken = result.data.auth.token;
+                    showMessage('Login successful!', 'success');
+                    
+                    // Display token
+                    document.getElementById('tokenText').textContent = currentToken;
+                    tokenDisplay.style.display = 'block';
+                    
+                    // Store token in localStorage for use in file upload
+                    localStorage.setItem('jwt_token', currentToken);
+                    
+                } else {
+                    showMessage(result.message || 'Login failed', 'error');
+                }
+            } catch (error) {
+                showMessage('Network error. Please try again.', 'error');
+                console.error('Login error:', error);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Login';
+            }
+        });
+        
+        document.getElementById('copyBtn').addEventListener('click', function() {
+            navigator.clipboard.writeText(currentToken).then(function() {
+                const copyBtn = document.getElementById('copyBtn');
+                const originalText = copyBtn.textContent;
+                copyBtn.textContent = 'Copied!';
+                copyBtn.style.backgroundColor = '#28a745';
+                
+                setTimeout(() => {
+                    copyBtn.textContent = originalText;
+                    copyBtn.style.backgroundColor = '#17a2b8';
+                }, 2000);
+            }).catch(function(err) {
+                console.error('Could not copy text: ', err);
+                showMessage('Failed to copy token to clipboard', 'error');
+            });
+        });
+        
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = `message ${type}`;
+            messageDiv.style.display = 'block';
+            
+            // Hide message after 5 seconds for success, 10 seconds for error
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, type === 'success' ? 5000 : 10000);
+        }
+        
+        // Check if user is already logged in
+        window.addEventListener('load', function() {
+            const existingToken = localStorage.getItem('jwt_token');
+            if (existingToken) {
+                currentToken = existingToken;
+                document.getElementById('tokenText').textContent = currentToken;
+                document.getElementById('tokenDisplay').style.display = 'block';
+                showMessage('You are already logged in', 'success');
+            }
+        });
+    </script>
+</body>
+</html>

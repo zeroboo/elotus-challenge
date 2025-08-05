@@ -14,8 +14,20 @@ func HandleStatic(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Serve the upload form
-	if r.URL.Path == "/upload-form" || r.URL.Path == "/upload-form/" {
+	if r.URL.Path == "/form/upload" || r.URL.Path == "/form/upload/" {
 		http.ServeFile(w, r, filepath.Join("static", "upload.html"))
+		return
+	}
+
+	// Serve the registration form
+	if r.URL.Path == "/form/register" || r.URL.Path == "/form/register/" {
+		http.ServeFile(w, r, filepath.Join("static", "register.html"))
+		return
+	}
+
+	// Serve the login form
+	if r.URL.Path == "/form/login" || r.URL.Path == "/form/login/" {
+		http.ServeFile(w, r, filepath.Join("static", "login.html"))
 		return
 	}
 
