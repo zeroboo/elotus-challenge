@@ -1,7 +1,5 @@
 # elotus-challenge
 
-A comprehensive solution for Elotus's backend challenge, featuring data structures & algorithms implementations and a complete file upload API with JWT authentication.
-
 This project is an implementation for [elotus's challenge](https://github.com/elotusteam/challenges/blob/main/backend.md)
 
 ## I. Data Structures And Algorithms
