@@ -8,10 +8,9 @@ import (
 
 	"elotuschallenge/common"
 	"elotuschallenge/internal"
+	"elotuschallenge/middleware"
 	"elotuschallenge/transfer"
 	"elotuschallenge/utils"
-
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -53,13 +52,6 @@ func HandleUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	username, _ := r.Context().Value("username").(string)
-
-	log.Info().
-		Int("user_id", userID).
-		Str("username", username).
-		Msg("File upload request received")
-
 	// Parse multipart form with size limit
 	err := r.ParseMultipartForm(MaxFileSize)
 	if err != nil {
@@ -70,13 +62,14 @@ func HandleUpload(w http.ResponseWriter, r *http.Request) {
 	// Get the file from form field "data"
 	file, fileHeader, err := r.FormFile("data")
 	if err != nil {
-		handleError(w, http.StatusBadRequest, common.ErrMsgBadRequest, fmt.Errorf("failed to get file from form: %w", err))
+		handleError(w, http.StatusBadRequest, common.ErrMsgBadRequest, fmt.Errorf("%w: %v", common.ErrReadFileFromFormFailed, err))
 		return
 	}
 	defer file.Close()
 
 	// Check file size
 	if fileHeader.Size > MaxFileSize {
+
 		err := fmt.Errorf("%w: %v>%v", common.ErrFileTooLarge, fileHeader.Size, MaxFileSize)
 		handleError(w, http.StatusBadRequest, common.ErrMsgBadRequest, err)
 		return
@@ -123,14 +116,14 @@ func HandleUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Info().
-		Int("user_id", userID).
-		Str("filename", savedMetadata.Filename).
-		Str("original_name", savedMetadata.OriginalName).
-		Str("content_type", savedMetadata.ContentType).
-		Int64("size", savedMetadata.Size).
-		Str("ip_address", clientIP).
-		Msg(common.MsgFileUploadSuccess)
+	// Log success details
+	middleware.AddLogEntries(r,
+		"content_type", contentType,
+		"saved_filename", savedMetadata.Filename,
+		"file_id", savedMetadata.ID,
+		"success", true,
+		"original_filename", fileHeader.Filename, "file_size", fileHeader.Size,
+	)
 
 	// Respond with success
 	w.Header().Set(common.HeaderContentType, common.HeaderValueContentTypeJSON)

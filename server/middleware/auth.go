@@ -54,10 +54,30 @@ func AuthUser(next http.HandlerFunc) http.HandlerFunc {
 		// Add user info to request context
 		ctx := context.WithValue(r.Context(), common.ContextKeyUserID, claims.UserID)
 		ctx = context.WithValue(ctx, common.ContextKeyUsername, claims.Username)
-		r = r.WithContext(ctx)
+
+		// Create a mutable log context with initial fields
+		logContext := &LogContext{
+			Fields: map[string]interface{}{
+				"path":       r.URL.Path,
+				"method":     r.Method,
+				"client_ip":  utils.GetClientIP(r),
+				"user_agent": r.Header.Get(common.HeaderUserAgent),
+				"user_id":    claims.UserID,
+				"username":   claims.Username,
+			},
+		}
+		ctx = context.WithValue(ctx, logContextKey, logContext)
 
 		// Call next handler
+		r = r.WithContext(ctx)
 		next(w, r)
+
+		// Log the request using all accumulated fields
+		logEvent := log.Info()
+		for key, value := range logContext.Fields {
+			logEvent = logEvent.Interface(key, value)
+		}
+		logEvent.Msg("Request processed")
 	}
 }
 
